@@ -22,6 +22,6 @@ script:
   - go get github.com/jiaqiwang969/imgsync-wjq
   - ls 
   - go build main.go 
-  - ./main sync --namespace google-containers --querylimit 20 --processlimit 50 --httptimeout 10s --processcount 200 --dockeruser jiaqiknight --dockerpassword ${DOCKER_PASSWORD} --githubrepo latelee/gcr.io --githubtoken ${GITHUB_TOKEN}
-  - ./main sync --namespace kubeflow-images-public --querylimit 20 --processlimit 50 --httptimeout 10s --processcount 200 --dockeruser jiaqiknight --dockerpassword ${DOCKER_PASSWORD} --githubrepo latelee/gcr.io --githubtoken ${GITHUB_TOKEN}
+  - ./main sync --namespace google-containers --querylimit 20 --processlimit 50 --httptimeout 20s --processcount 200 --dockeruser jiaqiknight --dockerpassword ${DOCKER_PASSWORD} --githubrepo latelee/gcr.io --githubtoken ${GITHUB_TOKEN}
+  - ./main sync --namespace kubeflow-images-public --querylimit 20 --processlimit 50 --httptimeout 20s --processcount -1 --dockeruser jiaqiknight --dockerpassword ${DOCKER_PASSWORD} --githubrepo latelee/gcr.io --githubtoken ${GITHUB_TOKEN}
   
