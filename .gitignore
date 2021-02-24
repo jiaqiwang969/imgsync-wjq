@@ -12,5 +12,6 @@
 *.out
 
 dist
-imgsync
-manifests
+gcr.db
+CHANGELOG.md
+push.sh

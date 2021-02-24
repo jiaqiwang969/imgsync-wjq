@@ -1,127 +1,90 @@
-![imgsync](.logo.png)
+# gcrsync  
+[![Build Status](https://www.travis-ci.org/latelee/gcrsync.svg?branch=master)](https://www.travis-ci.org/latelee/gcrsync)
 
-## imgsync
+A docker image sync tool for Google container registry (gcr.io)
 
-A docker image sync tool.
+gcr.io(Google container registry)docker镜像同步工具
 
-|Registry|Address|Docker Hub|Status|
-|--------|-------|----------|------|
-|Flannel|[quay.io/coreos/flannel](https://quay.io/coreos/flannel)|`gcrxio/quay.io_coreos_flannel`|[![Build Status](https://travis-ci.org/mritd/imgsync.svg?branch=master)](https://travis-ci.org/mritd/imgsync)|
-|kubeadm|[k8s.gcr.io](https://k8s.gcr.io)|`gcrxio/k8s.gcr.io_*`|[![Build Status](https://travis-ci.org/mritd/imgsync.svg?branch=master)](https://travis-ci.org/mritd/imgsync)|
-|Helm|[gcr.io/kubernetes-helm](https://gcr.io/kubernetes-helm)|`gcrxio/gcr.io_kubernetes-helm_*`|[![Build Status](https://travis-ci.org/mritd/imgsync.svg?branch=master)](https://travis-ci.org/mritd/imgsync)|
-|Istio|[gcr.io/istio-release](https://gcr.io/istio-release)|`gcrxio/gcr.io_istio-release_*`|[![Build Status](https://travis-ci.org/mritd/imgsync.svg?branch=master)](https://travis-ci.org/mritd/imgsync)|
-|Linkerd|[gcr.io/linkerd-io](https://gcr.io/linkerd-io)|`gcrxio/gcr.io_linkerd-io_*`|[![Build Status](https://travis-ci.org/mritd/imgsync.svg?branch=master)](https://travis-ci.org/mritd/imgsync)|
-|Spinnaker|[gcr.io/spinnaker-marketplace](https://gcr.io/spinnaker-marketplace)|`gcrxio/gcr.io_spinnaker-marketplace_*`|[![Build Status](https://travis-ci.org/mritd/imgsync.svg?branch=master)](https://travis-ci.org/mritd/imgsync)|
-|Distroless|[gcr.io/distroless](https://gcr.io/distroless)|`gcrxio/gcr.io_distroless_*`|[![Build Status](https://travis-ci.org/mritd/imgsync.svg?branch=master)](https://travis-ci.org/mritd/imgsync)|
-|Samples|[gcr.io/google-samples](https://gcr.io/google-samples)|`gcrxio/gcr.io_google-samples_*`|[![Build Status](https://travis-ci.org/mritd/imgsync.svg?branch=master)](https://travis-ci.org/mritd/imgsync)|
-|KNative|[gcr.io/knative-releases](https://gcr.io/knative-releases)|`gcrxio/gcr.io_knative-releases_*`|[![Build Status](https://travis-ci.org/mritd/imgsync.svg?branch=master)](https://travis-ci.org/mritd/imgsync)|
-
-**如何快速拉取 kubeadm 镜像?**
-
-```sh
-for img in `kubeadm config images list`; do
-    docker pull "gcrxio/$(echo $img | tr '/' '_')" && docker tag "gcrxio/$(echo $img | tr '/' '_')" $img;
-done
-```
-
-## 特性
-
-- **不依赖 Docker 运行**
-- **基于 Manifests 同步**
-- **支持 [Fat Manifests](https://medium.com/@arunrajeevan/handling-multi-platform-deployment-using-manifest-file-in-docker-317736a2a039) 镜像同步**
-- **Manifests 文件本地 Cache，按需同步**
-- **同步期间不占用本地磁盘空间(直接通过标准库转发镜像)**
-- **可控的并发同步(优雅关闭/可调节并发数量)**
-- **按批次同步，支持同步指定区间段镜像**
-- **支持多仓库同步(后续仓库增加请提交 issue)**
-- **支持生成同步报告，同步报告推送 [Telegram](https://t.me/imgsync)**
 
 ## 安装
-
-工具采用 go 编写，安装可直接从 release 页下载对应平台二进制文件，并增加可执行权限运行既可
-
+工具使用go语言编写，需要预先准备好go编译环境，在本地构建命令如下：
 ```bash
-wget https://github.com/mritd/imgsync/releases/download/v2.0.0/imgsync_linux_amd64
-chmod +x imgsync_linux_amd64
-./imgsync_linux_amd64 --help
+cd $(GOPATH)/src
+go get github.com/latelee/gcrsync
+cd gcrsync
+go build
 ```
-
-## 编译
-
-如果预编译不包含您的平台架构，可以自行编译本工具，本工具编译依赖如下
-
-- make
-- git
-- Go 1.14.2+
-
-编译时直接运行 `make bin` 命令既可，如需交叉编译请安装 [gox](https://github.com/mitchellh/gox) 工具并执行 `make` 命令既可
-
+注意！由于gcr.io一般无法直接访问，因此，需要在诸如travis-ci等服务器（位于国外）才能正常执行本工具。  
+本工具仅在[travis-ci](https://www.travis-ci.org/latelee/gcrsync)测试通过，本地仅做编译工作（以保证构建成功）。
 ## 使用
-
+编译成功得到的可执行文件为gcrsync，使用帮助信息如下：  
 ```bash
-Docker image sync tool.
+A docker image sync tool for Google container registry (gcr.io).
 
 Usage:
-  imgsync [flags]
-  imgsync [command]
+  gcrsync [flags]
+  gcrsync [command]
 
 Available Commands:
-  flannel     Sync flannel images
-  gcr         Sync gcr images
+  compare     Compare gcr registry and private registry
   help        Help about any command
-  sync        Sync single image
+  monitor     Monitor sync images
+  sync        Sync gcr images
+  test        Test sync
 
 Flags:
-      --debug     debug mode
-  -h, --help      help for imgsync
-  -v, --version   version for imgsync
+      --debug                   debug mode
+      --dockerpassword string   docker registry user password
+      --dockeruser string       docker registry user
+      --githubemail string      github commit email (default "li@latelee.org")
+      --githubrepo string       github commit repo (default "latelee/gcr.io")
+      --githubtoken string      github commit token(must specify)
+      --githubuser string       github commit user name (default "Late Lee")
+  -h, --help                    help for gcrsync
+      --httptimeout duration    http request timeout (default 10s)
+      --namespace string        google container registry namespace (default "google-containers")
+      --processcount int        image process total count(-1 means all in grc.io) (default 100)
+      --processlimit int        image process limit (default 20)
+      --proxy string            http client proxy
+      --querylimit int          http query limit (default 50)
 
-Use "imgsync [command] --help" for more information about a command..
+Use "gcrsync [command] --help" for more information about a command.
 ```
+注意，--dockeruser、--dockerpassword、--githubrepo、--githubtoken等，务必根据实际情况修改。
 
-### sync
+### sync 命令
+该命令进行真正的同步操作，目前仅对此命令进行全面测试，其工作流程如下:  
+- 首先使用 `--githubtoken` 给定的 token 克隆 `--githubrepo` 给定的仓库到本地(这个仓库即为元数据仓库)
+- 获取 `gcr.io` 下由 `--namespace` 给定命名空间下的所有镜像，但是过滤掉测试标签（带alpha/beta/rc等字眼），也过滤arm/ppc等平台版本
+- 读取克隆的元数据仓库内对应的命名空间的ImageList文件
+- 对比两者差异，得出待同步镜像
+- 执行 `pull`、`tag`、`push` 操作，将其推送到由 `--user` 给定的Docker Hub用户仓库中
+- 追加元数据仓库内对应的命名空间 的ImageList文件
+- 生成 README.md 并推送元数据到指定远程仓库
 
-`sync` 子命令用于同步单个镜像，一般用于测试目的进行同步并查看相关日志
+本工具实际使用命令如下：
+```
+- gcrsync sync --namespace google-containers --querylimit 20 --processlimit 50 --httptimeout 10s --processcount 200 --dockeruser gcrcontainer --dockerpassword ${DOCKER_PASSWORD} --githubrepo latelee/gcr.io --githubtoken ${GITHUB_TOKEN}
+```
+其中，${DOCKER_PASSWORD}、${GITHUB_TOKEN}因为是敏感信息，使用travis-ci的环境变量（参考travis-ci官方使用文档），所以不要泄漏。--processcount指定为200，表示一次执行处理的gcr.io镜像为200个，笔者实际执行中发现，超过此数，travis-ci会执行失败，如果要全部同步，将其置为-1即可。  
 
-### gcr
+### compare 命令
 
-`gcr` 子命令用户同步 **gcr.io** 相关镜像，如果使用 `--kubeadm` 选项则同步 **k8s.gcr.io** 镜像
+该命令用于对比 Docker Hub 指定用户镜像与 `gcr.io` 指定 namesapce 下的镜像差异，同时生成已经同步的 json 文件
 
-### flannel
+### monitor 命令
 
-`flannel` 子命令用于同步 **quay.io** 的 flannel 镜像
+该命令与 compare 类似，只不过不生成任何文件，实时在控制台显示对比差异；一般用于监测同步进度
 
-## 推荐配置
+### test 命令
 
-由于工具会开启并发同步，且不经过 Docker，不进行本地缓存，所以本工具推荐的最低运行配置如下:
-
-- 4 核心 8G 内存 vps
-- 至少 100/M 对等的带宽接口
-- Ubuntu 18.04+ 系统环境
-- 磁盘至少保留 2G 可用空间(manifests 本地缓存需要用到一定空间)
-
-**本工具默认 20 并发进行同步处理，且每次同步针对每个镜像 tag 至少发出一次 manifest 请求；
-这意味着当前(在本文档编写时)每次全部仓库同步至少发出 100083 个 manifests 请求以及其他试图
-获取镜像名称列表、tag 列表的请求，在高并发下这需要服务器有足够的 CPU 和带宽能力；内存占用方面
-目前还可以接受，主要内存消耗在启动时加载 manifests 配置文件并反序列化到内存 map，这期间大约
-需要花费最高 10s 的时间(434M json 文件)。**
-
-## 镜像名称
-
-工具默认会转换原镜像名称，转换规则为将原镜像名称内的 `/` 全部替换为 `_`，例如(假设 Docker Hub 用户名为 `gcrxio`):
-
-**`gcr.io/istio-release/pilot:latest` ==> `gcrxio/gcr.io_istio-release_pilot:latest`**
-
-## 国内 Docker Hub Mirror
-
-- Aliyun: `[系统分配前缀].mirror.aliyuncs.com`
-- Tencent: `https://mirror.ccs.tencentyun.com`
-- 163: `http://hub-mirror.c.163.com`
-- Azure: `dockerhub.azk8s.cn`
+该命令与 sync 命令基本行为一致，只不过不进行真正的同步，会生成 CHANGELOG，但不会推送到远程
 
 ## 其他说明
+最终镜像文件位于：[https://hub.docker.com/r/gcrcontainer/]<https://hub.docker.com/r/gcrcontainer/>。  
+镜像列表说明位于：[https://github.com/latelee/gcr.io]<https://github.com/latelee/gcr.io>，gcr.io的命名空间与应该仓库的目录一一对应，内有README.md，列出镜像及其标签（tag），并链接到Docker Hub账号对应的镜像地址。  
+traivs-ci一次处理数据不多，gcr.io的google-containers镜像不到3000个，一共执行了很多次才全部同步完成。  
+本工具每天定时执行一次，但不能保证gcr.io指定命名空间下所有镜像都能同步到Docker Hub上。请谨慎使用。    
 
-**工具目前仅支持同步到 Docker Hub，且以后没有同步到其他仓库打算。同步 Docker Hub
-时默认会同步到 `--user` 指定的用户下；本工具默认已经将支持的仓库同步到 Docker Hub [gcrxio](https://hub.docker.com/u/gcrxio) 用户下；
-其他更细节使用请自行通过 `--help` 查看以及参考本项目 [Travis CI](https://github.com/mritd/imgsync/tree/master/.travis.yml) 配置文件。
-项目目录下的 Github Action 配置已经停用(性能不行)，没删除是因为调了好久删了可惜，以后备用吧。**
+## 致谢
+本工具原作者为[mritd](https://github.com/mritd)，本仓库源码由[李迟](https://github.com/latleee)根据使用情况做了适当的修改。  

@@ -1,76 +1,25 @@
+os:
+  - linux
+
+sudo: required
+
+services:
+  - docker
+
 language: go
 
-os: linux
-dist: bionic
-go: 1.14.x
+go:
+  - 1.11.x
 
-cache:
-  directories:
-    - ${HOME}/.cache/go-build
-    - ${GOPATH}/pkg/mod
-    - ${GOPATH}/bin
-
-env:
-  global:
-    - GCR_REPO: ${HOME}/gcr
-
-stages:
-  - Build imgsync
-  - Sync Kubeadm
-  - Sync Flannel
-  - Sync Helm
-  - Sync Istio
-  - Sync Distroless
-  - Sync Samples
-  - Sync Linkerd
-  - Sync Spinnaker
-  - Sync KNative
-
-before_script:
-  - bash .travis-before.sh
-
-jobs:
-  include:
-    - name: Build imgsync
-      stage: Build imgsync
-      script:
-        - make install
-    - name: Sync Kubeadm
-      stage: Sync Kubeadm
-      script:
-        - imgsync gcr --kubeadm --user ${DOCKER_USER} --password ${DOCKER_PASSWORD} --process-limit 30 --manifests ${GCR_REPO}/manifests --report --report-name kubeadm 
-    - name: Sync Flannel
-      stage: Sync Flannel
-      script:
-        - imgsync flannel --user ${DOCKER_USER} --password ${DOCKER_PASSWORD} --process-limit 30 --manifests ${GCR_REPO}/manifests --report --report-name flannel 
-    - name: Sync Helm
-      stage: Sync Helm
-      script:
-        - imgsync gcr --namespace kubernetes-helm --user ${DOCKER_USER} --password ${DOCKER_PASSWORD} --process-limit 30 --manifests ${GCR_REPO}/manifests --report --report-name kubernetes-helm 
-    - name: Sync Istio
-      stage: Sync Istio
-      script:
-        - imgsync gcr --namespace istio-release --user ${DOCKER_USER} --password ${DOCKER_PASSWORD} --process-limit 30 --manifests ${GCR_REPO}/manifests --report --report-name istio-release
-    - name: Sync Distroless
-      stage: Sync Distroless
-      script:
-        - imgsync gcr --namespace distroless --user ${DOCKER_USER} --password ${DOCKER_PASSWORD} --process-limit 30 --manifests ${GCR_REPO}/manifests --report --report-name distroless 
-    - name: Sync Samples
-      stage: Sync Samples
-      script:
-        - imgsync gcr --namespace google-samples --user ${DOCKER_USER} --password ${DOCKER_PASSWORD} --process-limit 30 --manifests ${GCR_REPO}/manifests --report --report-name google-samples 
-    - name: Sync Linkerd
-      stage: Sync Linkerd
-      script:
-        - imgsync gcr --namespace linkerd-io --user ${DOCKER_USER} --password ${DOCKER_PASSWORD} --process-limit 30 --manifests ${GCR_REPO}/manifests --report --report-name linkerd-io 
-    - name: Sync Spinnaker
-      stage: Sync Spinnaker
-      script:
-        - imgsync gcr --namespace spinnaker-marketplace --user ${DOCKER_USER} --password ${DOCKER_PASSWORD} --process-limit 30 --manifests ${GCR_REPO}/manifests --report --report-name spinnaker-marketplace 
-    - name: Sync KNative
-      stage: Sync KNative
-      script:
-        - imgsync gcr --namespace knative-releases --user ${DOCKER_USER} --password ${DOCKER_PASSWORD} --process-limit 30 --manifests ${GCR_REPO}/manifests --report --report-name knative-releases 
-
-after_success:
-  - bash .travis-after-success.sh
+##before_script:
+  ##- curl https://gcr.io/v2/google-containers/tags/list
+  ##- echo "ddddddddddddddd"
+  ##- curl https://gcr.io/v2/google-containers/kube-apiserver-arm64/tags/list
+  ## travis_wait 30 
+script:
+  #- pwd
+  #- go build
+  - go get github.com/latelee/gcrsync
+  - gcrsync sync --namespace google-containers --querylimit 20 --processlimit 50 --httptimeout 10s --processcount 200 --dockeruser gcrcontainer --dockerpassword ${DOCKER_PASSWORD} --githubrepo latelee/gcr.io --githubtoken ${GITHUB_TOKEN}
+  - gcrsync sync --namespace kubeflow-images-public --querylimit 20 --processlimit 50 --httptimeout 10s --processcount 10 --dockeruser gcrcontainer --dockerpassword ${DOCKER_PASSWORD} --githubrepo latelee/gcr.io --githubtoken ${GITHUB_TOKEN}
+  

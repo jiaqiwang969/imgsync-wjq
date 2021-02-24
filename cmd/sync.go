@@ -1,64 +1,63 @@
+/*
+ * Copyright © 2018 mritd <mritd1234@gmail.com>
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
 package cmd
 
 import (
-	"context"
-	"strings"
-
-	"github.com/sirupsen/logrus"
-
-	"github.com/mritd/imgsync/core"
+	"github.com/latelee/gcrsync/pkg/gcrsync"
 	"github.com/spf13/cobra"
 )
 
-var syncOption core.SyncOption
+var commitMsg string
 
 var syncCmd = &cobra.Command{
 	Use:   "sync",
-	Short: "Sync single image",
+	Short: "Sync gcr images",
 	Long: `
-Sync single image.`,
-	PreRun: prerun,
+Sync gcr images.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) != 1 {
-			_ = cmd.Help()
-			return
+
+		gcr := &gcrsync.Gcr{
+			Proxy:          proxy,
+			DockerUser:     dockerUser,
+			DockerPassword: dockerPassword,
+			NameSpace:      nameSpace,
+			QueryLimit:     make(chan int, queryLimit),
+			ProcessLimit:   make(chan int, processLimit),
+            ProcessCount:   processCount,
+			HttpTimeOut:    httpTimeout,
+			GithubRepo:     githubRepo,
+            GithubUser:     githubUser,
+            GithubEmail:    githubEmail,
+			GithubToken:    githubToken,
+			CommitMsg:      commitMsg,
+			Debug:          debug,
 		}
-		var repo, user, name, tag string
-		ss := strings.Split(args[0], ":")
-		if len(ss) == 1 {
-			tag = "latest"
-		} else {
-			tag = ss[len(ss)-1]
-		}
-		ss = strings.Split(ss[0], "/")
-		switch len(ss) {
-		case 1:
-			name = ss[0]
-		case 2:
-			repo = ss[0]
-			name = ss[1]
-		case 3:
-			repo = ss[0]
-			user = ss[1]
-			name = ss[2]
-		default:
-			logrus.Fatalf("image name format error: %s", args[0])
-		}
-		core.SyncImages(context.Background(), core.Images{&core.Image{
-			Repo: repo,
-			User: user,
-			Name: name,
-			Tag:  tag,
-		}}, &syncOption)
+		gcr.Init()
+		gcr.Sync()
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(syncCmd)
-	syncCmd.PersistentFlags().StringVar(&syncOption.User, "user", "", "docker hub user")
-	syncCmd.PersistentFlags().StringVar(&syncOption.Password, "password", "", "docker hub user password")
-	syncCmd.PersistentFlags().StringVar(&syncOption.NameSpace, "namespace", "google-containers", "google container registry namespace")
-	syncCmd.PersistentFlags().DurationVar(&syncOption.Timeout, "timeout", core.DefaultSyncTimeout, "sync single image timeout")
-	syncCmd.PersistentFlags().BoolVar(&syncOption.OnlyDownloadManifests, "download-manifests", false, "only download manifests")
-	syncCmd.PersistentFlags().StringVar(&core.ManifestDir, "manifests", "manifests", "manifests storage dir")
+	//syncCmd.PersistentFlags().StringVar(&commitMsg, "commitmsg", "Travis CI Auto Synchronized.", "commit message")
 }
